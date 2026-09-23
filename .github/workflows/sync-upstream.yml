@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout fork
@@ -21,10 +21,13 @@ jobs:
 
       - name: Sync with upstream
         run: |
-          git remote add upstream "https://github.com/${{ github.event.repository.parent.full_name }}.git"
-          git fetch upstream
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git checkout "${{ github.event.repository.default_branch }}"
-          git reset --hard "upstream/${{ github.event.repository.default_branch }}"
+          git remote add upstream https://github.com/LukasGrebe/ha-addons.git
+          git fetch upstream main
 
-          git push origin "${{ github.event.repository.default_branch }}" --force
+          git checkout main
+          git rebase upstream/main
+
+          git push origin main --force-with-lease
