@@ -3,7 +3,6 @@ name: Sync upstream
 on:
   schedule:
     - cron: "0 * * * *"
-
   workflow_dispatch:
 
 permissions:
@@ -28,6 +27,18 @@ jobs:
           git fetch upstream main
 
           git checkout main
-          git rebase upstream/main
 
-          git push origin main --force-with-lease
+          # Übernimmt alle Änderungen vom Upstream,
+          # außer Dateien unter .github/workflows/
+          git diff --binary HEAD upstream/main -- . \
+            ':(exclude).github/workflows/**' \
+            > /tmp/upstream.patch
+
+          if [ ! -s /tmp/upstream.patch ]; then
+            echo "Keine neuen Upstream-Änderungen."
+            exit 0
+          fi
+
+          git apply --index /tmp/upstream.patch
+          git commit -m "Sync upstream"
+          git push origin main
