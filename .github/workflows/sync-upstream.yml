@@ -34,11 +34,17 @@ jobs:
             ':(exclude).github/workflows/**' \
             > /tmp/upstream.patch
 
-          if [ ! -s /tmp/upstream.patch ]; then
-            echo "Keine neuen Upstream-Änderungen."
+          if [ -s /tmp/upstream.patch ]; then
+            git apply --index /tmp/upstream.patch
+            git commit -m "Sync upstream"
+            git push origin main
             exit 0
           fi
 
-          git apply --index /tmp/upstream.patch
-          git commit -m "Sync upstream"
-          git push origin main
+          echo "Keine neuen Upstream-Änderungen."
+          last_commit=$(git log -1 --format=%ct)
+          now=$(date -u +%s)
+          if (( now - last_commit >= 30 * 24 * 60 * 60 )); then
+            git commit --allow-empty -m "Keep scheduled sync active"
+            git push origin main
+          fi
